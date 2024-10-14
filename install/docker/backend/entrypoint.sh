@@ -17,4 +17,5 @@ if [ ! -f "$ROOT/first" ]; then
     hydrooj cli user setSuperAdmin 2
 fi
 
+hydrooj cli system set server.host 0.0.0.0
 pm2-runtime start hydrooj
