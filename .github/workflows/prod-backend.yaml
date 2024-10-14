@@ -19,16 +19,36 @@ jobs:
       - name: Get release image tag
         id: image_tag
         run: echo "image_tag=$(make get-image-tag)" >> $GITHUB_ENV
-      - name: Build and Push Docker Image to Google Cloud Container Registry
-        uses: kms-healthcare/il-actions/gcr-build-push@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker Image With Tag
+        id: builder
+        run: |
+          docker build --tag ${{ secrets.GCLOUD_REGISTRY }}/${{ secrets.GCLOUD_PROJECT_ID }}/${{ env.image_name }}:${{ env.image_tag }} --file ./install/docker/backend/Dockerfile ./install/docker/backend
+        shell: bash
+      - uses: google-github-actions/auth@v2
         with:
-          image-name: ${{ env.image_name }}
-          image-tag: ${{ env.image_tag }}
-          gcloud-project-id: ${{ secrets.GCLOUD_PROJECT_ID }}
-          gcloud-registry: ${{ secrets.GCLOUD_REGISTRY }}
-          gcloud-secrets: ${{ secrets.GCLOUD_SERVICE_KEY }}
-          dockerfile: ./install/docker/backend/Dockerfile
-          docker-context: ./install/docker/backend
+          credentials_json: "${{ secrets.GCLOUD_SERVICE_KEY }}"
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCLOUD_REGISTRY }}
+        shell: bash
+      - name: Push Docker Image to Google Cloud Registry
+        run: |
+          docker push ${{ secrets.GCLOUD_REGISTRY }}/${{ secrets.GCLOUD_PROJECT_ID }}/${{ env.image_name }}:${{ env.image_tag }}
+        shell: bash
+#      - name: Build and Push Docker Image to Google Cloud Container Registry
+#        uses: kms-healthcare/il-actions/gcr-build-push@main
+#        with:
+#          image-name: ${{ env.image_name }}
+#          image-tag: ${{ env.image_tag }}
+#          gcloud-project-id: ${{ secrets.GCLOUD_PROJECT_ID }}
+#          gcloud-registry: ${{ secrets.GCLOUD_REGISTRY }}
+#          gcloud-secrets: ${{ secrets.GCLOUD_SERVICE_KEY }}
+#          dockerfile: ./install/docker/backend/Dockerfile
+#          docker-context: ./install/docker/backend
       - name: Store tag as job output
         id: store_tag
         run: echo "image_tag=$(make get-image-tag)" >> "$GITHUB_OUTPUT"

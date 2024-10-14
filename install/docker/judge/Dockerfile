@@ -18,7 +18,7 @@ RUN apt-get -qq update && \
     golang \
     ruby \
     mono-runtime \
-    mono-mcs \
+    mono-mcs
 RUN cp /bin/bash /usr/bin/bash
 
 ADD ./entrypoint.sh /root/entrypoint.sh
